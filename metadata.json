@@ -1,0 +1,6 @@
+{
+  "name": "PT Industri Nusantara - Manufacturing & Precision Engineering",
+  "description": "Website resmi PT Industri Nusantara. Solusi manufaktur modern, fabrikasi logam presisi, CNC machining, otomasi industri, dan custom machine berstandar internasional ISO 9001.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

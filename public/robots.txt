@@ -1,0 +1,6 @@
+# robots.txt for PT Industri Nusantara
+User-agent: *
+Allow: /
+Disallow: /#admin
+
+Sitemap: https://industrinusantara.co.id/sitemap.xml
