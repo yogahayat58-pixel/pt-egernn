@@ -159,25 +159,31 @@ export const HomePage: React.FC = () => {
               </div>
 
               {/* Floating Card 1: 20+ Tahun Pengalaman (Top Right Offset) */}
-              <div className="absolute -top-5 -right-4 sm:-right-6 glass-panel rounded-xl p-3.5 sm:p-4 shadow-lg border border-slate-200/90 hidden sm:flex items-center gap-3 animate-bounce-slow">
+              <div className="absolute -top-5 -right-4 sm:-right-6 glass-panel rounded-xl p-3.5 shadow-lg border border-slate-200/90 hidden sm:flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold shrink-0">
                   <Award className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-base sm:text-lg font-extrabold text-slate-900 tabular-nums">20+ Tahun</div>
-                  <div className="text-xs text-slate-500 font-medium">Dedikasi Rekayasa Presisi</div>
+                  <div className="text-sm sm:text-base font-extrabold text-slate-900 tabular-nums">20+ Tahun</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Pengalaman Industri</div>
                 </div>
               </div>
 
-              {/* Floating Card 2: 500+ Project & ISO Certified (Bottom Left Offset) */}
-              <div className="absolute -bottom-6 -left-4 sm:-left-6 glass-panel rounded-xl p-3.5 sm:p-4 shadow-xl border border-slate-200/90 flex items-center gap-4">
+              {/* Floating Card 2: 500+ Project & 98% Client Satisfaction (Bottom Left Offset) */}
+              <div className="absolute -bottom-6 -left-4 sm:-left-6 glass-panel rounded-xl p-3.5 shadow-xl border border-slate-200/90 flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
-                  <ShieldCheck className="w-5 h-5" />
+                  <CheckCircle className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-base sm:text-lg font-extrabold text-slate-900 tabular-nums">500+ Proyek</div>
-                  <div className="text-xs text-slate-500 font-medium">98% Kepuasan Klien Korporasi</div>
+                  <div className="text-sm sm:text-base font-extrabold text-slate-900 tabular-nums">500+ Proyek</div>
+                  <div className="text-[11px] text-slate-500 font-medium">98% Client Satisfaction</div>
                 </div>
+              </div>
+
+              {/* Floating Card 3: ISO Certified (Top Left Overlay) */}
+              <div className="absolute top-4 left-4 glass-panel bg-slate-950/85 backdrop-blur-md rounded-lg px-3 py-1.5 shadow-md border border-white/20 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold text-white tracking-wide">ISO Certified (9001:2015)</span>
               </div>
 
             </div>

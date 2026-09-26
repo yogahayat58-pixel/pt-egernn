@@ -91,15 +91,27 @@ export const AdminDashboard: React.FC = () => {
     | 'backup'
   >('overview');
 
+  // Sub Tab for SEO
+  const [seoSubTab, setSeoSubTab] = useState<'website' | 'services' | 'projects' | 'articles' | 'files'>('website');
+
   // Dark Mode local toggle for admin
   const [adminDarkMode, setAdminDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; isError?: boolean } | null>(null);
 
-  const showToast = (msg: string) => {
-    setSuccessToast(msg);
-    setTimeout(() => setSuccessToast(null), 3500);
+  const showToast = (msg: string, isError: boolean = false) => {
+    setToast({ message: msg, isError });
+    setTimeout(() => setToast(null), 3500);
   };
+
+  // Confirmation Modal state to avoid window.confirm
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   // Modals for CRUD
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
@@ -326,7 +338,8 @@ export const AdminDashboard: React.FC = () => {
     { key: 'articles', label: 'Kelola Artikel (CRUD)', icon: <FileText className="w-4 h-4" />, count: articles.length },
     { key: 'testimonials', label: 'Kelola Testimoni', icon: <Star className="w-4 h-4" /> },
     { key: 'clients', label: 'Kelola Mitra Klien', icon: <Users className="w-4 h-4" /> },
-    { key: 'profile', label: 'Kelola Profil & Kontak', icon: <Building className="w-4 h-4" /> },
+    { key: 'profile', label: 'Kelola Profil Perusahaan', icon: <Building className="w-4 h-4" /> },
+    { key: 'contacts', label: 'Pengaturan Kontak & Sosmed', icon: <PhoneCall className="w-4 h-4" /> },
     { key: 'hero', label: 'Kelola Hero & Beranda', icon: <Sparkles className="w-4 h-4" /> },
     { key: 'about', label: 'Kelola Tentang Kami', icon: <Compass className="w-4 h-4" /> },
     { key: 'seo', label: 'Pengaturan SEO Global', icon: <Globe className="w-4 h-4" /> },
@@ -339,10 +352,12 @@ export const AdminDashboard: React.FC = () => {
     <div className={`min-h-screen ${adminDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-100/90 text-slate-800'}`}>
       
       {/* Toast Notification */}
-      {successToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-semibold animate-in slide-in-from-bottom duration-200">
-          <Check className="w-4 h-4 text-white" />
-          <span>{successToast}</span>
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-semibold animate-in slide-in-from-bottom duration-200 ${
+          toast.isError ? 'bg-rose-600' : 'bg-emerald-600'
+        }`}>
+          {toast.isError ? <X className="w-4 h-4 text-white" /> : <Check className="w-4 h-4 text-white" />}
+          <span>{toast.message}</span>
         </div>
       )}
 
@@ -812,12 +827,18 @@ export const AdminDashboard: React.FC = () => {
                             </button>
                             <button
                               onClick={() => {
-                                if (confirm(`Hapus layanan "${srv.title}"?`)) {
-                                  deleteService(srv.id);
-                                  showToast('Layanan dihapus');
-                                }
+                                setConfirmModal({
+                                  isOpen: true,
+                                  title: 'Hapus Layanan',
+                                  message: `Apakah Anda yakin ingin menghapus layanan "${srv.title}"?`,
+                                  confirmText: 'Ya, Hapus Layanan',
+                                  onConfirm: () => {
+                                    deleteService(srv.id);
+                                    showToast('Layanan berhasil dihapus');
+                                  }
+                                });
                               }}
-                              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-rose-500"
+                              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-rose-500 cursor-pointer"
                               title="Hapus Layanan"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1065,12 +1086,18 @@ export const AdminDashboard: React.FC = () => {
                             </button>
                             <button
                               onClick={() => {
-                                if (confirm(`Hapus proyek "${prj.title}"?`)) {
-                                  deleteProject(prj.id);
-                                  showToast('Proyek dihapus');
-                                }
+                                setConfirmModal({
+                                  isOpen: true,
+                                  title: 'Hapus Proyek',
+                                  message: `Apakah Anda yakin ingin menghapus proyek "${prj.title}"?`,
+                                  confirmText: 'Ya, Hapus Proyek',
+                                  onConfirm: () => {
+                                    deleteProject(prj.id);
+                                    showToast('Proyek berhasil dihapus');
+                                  }
+                                });
                               }}
-                              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-rose-500"
+                              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-rose-500 cursor-pointer"
                               title="Hapus Proyek"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1283,12 +1310,18 @@ export const AdminDashboard: React.FC = () => {
                             </button>
                             <button
                               onClick={() => {
-                                if (confirm(`Hapus artikel "${art.title}"?`)) {
-                                  deleteArticle(art.id);
-                                  showToast('Artikel dihapus');
-                                }
+                                setConfirmModal({
+                                  isOpen: true,
+                                  title: 'Hapus Artikel',
+                                  message: `Apakah Anda yakin ingin menghapus artikel "${art.title}"?`,
+                                  confirmText: 'Ya, Hapus Artikel',
+                                  onConfirm: () => {
+                                    deleteArticle(art.id);
+                                    showToast('Artikel berhasil dihapus');
+                                  }
+                                });
                               }}
-                              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-rose-500"
+                              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-rose-500 cursor-pointer"
                               title="Hapus Artikel"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1303,13 +1336,13 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 6: KELOLA PROFIL & KONTAK */}
+          {/* TAB: KELOLA PROFIL PERUSAHAAN */}
           {activeTab === 'profile' && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-2xl font-bold font-display">Kelola Profil Perusahaan & Kontak</h1>
+                <h1 className="text-2xl font-bold font-display">Kelola Profil Perusahaan</h1>
                 <p className="text-xs sm:text-sm text-slate-500">
-                  Perbarui identitas legal, nomor telepon, email, alamat pabrik, dan tautan sosial media.
+                  Perbarui identitas legal, nama resmi, tagline, dan akreditasi sertifikasi PT Industri Nusantara.
                 </p>
               </div>
 
@@ -1325,7 +1358,7 @@ export const AdminDashboard: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1">Tagline</label>
+                    <label className="block font-semibold mb-1">Tagline Korporat</label>
                     <input
                       type="text"
                       value={companyForm.tagline}
@@ -1334,60 +1367,127 @@ export const AdminDashboard: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1">Nomor Telepon Kantor</label>
+                    <label className="block font-semibold mb-1">Tahun Berdiri</label>
                     <input
-                      type="text"
-                      value={companyForm.phone}
-                      onChange={e => setCompanyForm({ ...companyForm, phone: e.target.value })}
+                      type="number"
+                      value={companyForm.establishedYear}
+                      onChange={e => setCompanyForm({ ...companyForm, establishedYear: Number(e.target.value) })}
                       className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold mb-1">WhatsApp Resmi</label>
+                    <label className="block font-semibold mb-1">Daftar Sertifikasi (Pisahkan dengan koma)</label>
                     <input
                       type="text"
-                      value={companyForm.whatsapp}
-                      onChange={e => setCompanyForm({ ...companyForm, whatsapp: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1">Email Resmi</label>
-                    <input
-                      type="email"
-                      value={companyForm.email}
-                      onChange={e => setCompanyForm({ ...companyForm, email: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold mb-1">Jam Operasional</label>
-                    <input
-                      type="text"
-                      value={companyForm.workingHours}
-                      onChange={e => setCompanyForm({ ...companyForm, workingHours: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block font-semibold mb-1">Alamat Fasilitas Pabrik</label>
-                    <input
-                      type="text"
-                      value={companyForm.address}
-                      onChange={e => setCompanyForm({ ...companyForm, address: e.target.value })}
+                      value={companyForm.certifications.join(', ')}
+                      onChange={e => setCompanyForm({
+                        ...companyForm,
+                        certifications: e.target.value.split(',').map(c => c.trim()).filter(Boolean)
+                      })}
                       className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
                     />
                   </div>
                 </div>
 
-                {/* Pengaturan Sosial Media */}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400">
-                    Pengaturan Tautan Sosial Media
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                  <button
+                    onClick={() => {
+                      updateCompanyInfo(companyForm);
+                      showToast('Profil perusahaan berhasil diperbarui!');
+                    }}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Simpan Perubahan Profil</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: PENGATURAN KONTAK & SOSIAL MEDIA */}
+          {activeTab === 'contacts' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-bold font-display">Pengaturan Kontak & Media Sosial</h1>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Kelola saluran komunikasi resmi, nomor WhatsApp, alamat fasilitas pabrik, dan akun media sosial.
+                </p>
+              </div>
+
+              <div className={`p-6 rounded-2xl border ${adminDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} space-y-6 text-xs sm:text-sm`}>
+                
+                {/* Kontak Utama */}
+                <div className="space-y-4">
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wider">
+                    Informasi Kontak Fasilitas & Kantor
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-semibold mb-1">LinkedIn URL</label>
+                      <label className="block font-semibold mb-1">Nomor Telepon Kantor</label>
+                      <input
+                        type="text"
+                        value={companyForm.phone}
+                        onChange={e => setCompanyForm({ ...companyForm, phone: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold mb-1">WhatsApp Resmi</label>
+                      <input
+                        type="text"
+                        value={companyForm.whatsapp}
+                        onChange={e => setCompanyForm({ ...companyForm, whatsapp: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold mb-1">Email Resmi</label>
+                      <input
+                        type="email"
+                        value={companyForm.email}
+                        onChange={e => setCompanyForm({ ...companyForm, email: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold mb-1">Jam Operasional</label>
+                      <input
+                        type="text"
+                        value={companyForm.workingHours}
+                        onChange={e => setCompanyForm({ ...companyForm, workingHours: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block font-semibold mb-1">Alamat Lengkap Fasilitas Workshop</label>
+                      <input
+                        type="text"
+                        value={companyForm.address}
+                        onChange={e => setCompanyForm({ ...companyForm, address: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block font-semibold mb-1">Kota / Kawasan</label>
+                      <input
+                        type="text"
+                        value={companyForm.city}
+                        onChange={e => setCompanyForm({ ...companyForm, city: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sosial Media */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wider">
+                    Tautan Media Sosial Resmi
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold mb-1">LinkedIn Profile</label>
                       <input
                         type="url"
                         value={companyForm.socials.linkedin}
@@ -1399,7 +1499,7 @@ export const AdminDashboard: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold mb-1">Instagram URL</label>
+                      <label className="block font-semibold mb-1">Instagram Account</label>
                       <input
                         type="url"
                         value={companyForm.socials.instagram}
@@ -1411,7 +1511,7 @@ export const AdminDashboard: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold mb-1">YouTube URL</label>
+                      <label className="block font-semibold mb-1">YouTube Channel</label>
                       <input
                         type="url"
                         value={companyForm.socials.youtube}
@@ -1423,7 +1523,7 @@ export const AdminDashboard: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold mb-1">Facebook URL</label>
+                      <label className="block font-semibold mb-1">Facebook Page</label>
                       <input
                         type="url"
                         value={companyForm.socials.facebook}
@@ -1441,14 +1541,15 @@ export const AdminDashboard: React.FC = () => {
                   <button
                     onClick={() => {
                       updateCompanyInfo(companyForm);
-                      showToast('Profil perusahaan berhasil diperbarui!');
+                      showToast('Pengaturan kontak & sosmed berhasil diperbarui!');
                     }}
                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <Save className="w-4 h-4" />
-                    <span>Simpan Perubahan Profil</span>
+                    <span>Simpan Kontak & Sosmed</span>
                   </button>
                 </div>
+
               </div>
             </div>
           )}
@@ -1569,154 +1670,333 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 8: PENGATURAN SEO GLOBAL */}
+          {/* TAB 8: PENGATURAN SEO (WEBSITE, LAYANAN, PROJECT, ARTIKEL) */}
           {activeTab === 'seo' && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-2xl font-bold font-display">Pengaturan SEO Website & Meta Tags</h1>
+                <h1 className="text-2xl font-bold font-display">Pengaturan SEO (Search Engine Optimization)</h1>
                 <p className="text-xs sm:text-sm text-slate-500">
-                  Konfigurasikan judul mesin pencari, meta deskripsi, Open Graph untuk media sosial, dan preview Schema.org.
+                  Konfigurasikan optimasi mesin pencari untuk halaman global, katalog layanan, portofolio proyek, artikel teknis, dan file sitemap.
                 </p>
               </div>
 
-              <div className={`p-6 rounded-2xl border ${adminDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} space-y-4 text-xs sm:text-sm`}>
-                <div>
-                  <label className="block font-semibold mb-1">Meta Title (Maks 60 karakter disarankan)</label>
-                  <input
-                    type="text"
-                    value={seoForm.metaTitle}
-                    onChange={e => setSeoForm({ ...seoForm, metaTitle: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none font-medium"
-                  />
-                </div>
+              {/* Sub-Tabs Selector */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800">
+                {[
+                  { id: 'website', label: 'SEO Website Global' },
+                  { id: 'services', label: 'SEO Layanan' },
+                  { id: 'projects', label: 'SEO Project' },
+                  { id: 'articles', label: 'SEO Artikel' },
+                  { id: 'files', label: 'Robots.txt & Sitemap' },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    onClick={() => setSeoSubTab(st.id as any)}
+                    className={`px-3.5 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
+                      seoSubTab === st.id
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
 
-                <div>
-                  <label className="block font-semibold mb-1">Meta Description (Maks 160 karakter)</label>
-                  <textarea
-                    rows={2}
-                    value={seoForm.metaDescription}
-                    onChange={e => setSeoForm({ ...seoForm, metaDescription: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none resize-none"
-                  />
-                </div>
+              {/* Sub-Tab 1: SEO Website Global */}
+              {seoSubTab === 'website' && (
+                <div className={`p-6 rounded-2xl border ${adminDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} space-y-4 text-xs sm:text-sm`}>
+                  <div>
+                    <label className="block font-semibold mb-1">Meta Title Global (Maks 60 karakter disarankan)</label>
+                    <input
+                      type="text"
+                      value={seoForm.metaTitle}
+                      onChange={e => setSeoForm({ ...seoForm, metaTitle: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none font-medium"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block font-semibold mb-1">Kata Kunci SEO (Keywords)</label>
-                  <input
-                    type="text"
-                    value={seoForm.keywords}
-                    onChange={e => setSeoForm({ ...seoForm, keywords: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
-                  />
-                </div>
+                  <div>
+                    <label className="block font-semibold mb-1">Meta Description (Maks 160 karakter)</label>
+                    <textarea
+                      rows={2}
+                      value={seoForm.metaDescription}
+                      onChange={e => setSeoForm({ ...seoForm, metaDescription: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none resize-none"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block font-semibold mb-1">URL Kanonikal</label>
-                  <input
-                    type="text"
-                    value={seoForm.canonicalUrl}
-                    onChange={e => setSeoForm({ ...seoForm, canonicalUrl: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none font-mono text-xs"
-                  />
-                </div>
+                  <div>
+                    <label className="block font-semibold mb-1">Kata Kunci SEO (Keywords)</label>
+                    <input
+                      type="text"
+                      value={seoForm.keywords}
+                      onChange={e => setSeoForm({ ...seoForm, keywords: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none"
+                    />
+                  </div>
 
-                {/* Google Search Result Preview */}
-                <div className="pt-2">
-                  <span className="text-xs font-bold text-slate-400 block mb-2">
-                    Pratinjau Hasil Pencarian Google (Snippet Preview):
-                  </span>
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
-                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400 block">
-                      {seoForm.canonicalUrl}
+                  <div>
+                    <label className="block font-semibold mb-1">URL Kanonikal</label>
+                    <input
+                      type="text"
+                      value={seoForm.canonicalUrl}
+                      onChange={e => setSeoForm({ ...seoForm, canonicalUrl: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border bg-slate-50 dark:bg-slate-950 focus:outline-none font-mono text-xs"
+                    />
+                  </div>
+
+                  {/* Google Search Result Preview */}
+                  <div className="pt-2">
+                    <span className="text-xs font-bold text-slate-400 block mb-2">
+                      Pratinjau Hasil Pencarian Google (Snippet Preview):
                     </span>
-                    <h4 className="text-base font-medium text-blue-700 dark:text-blue-400 hover:underline cursor-pointer">
-                      {seoForm.metaTitle}
-                    </h4>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
-                      {seoForm.metaDescription}
-                    </p>
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                      <span className="text-[11px] text-emerald-700 dark:text-emerald-400 block">
+                        {seoForm.canonicalUrl}
+                      </span>
+                      <h4 className="text-base font-medium text-blue-700 dark:text-blue-400 hover:underline cursor-pointer">
+                        {seoForm.metaTitle}
+                      </h4>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
+                        {seoForm.metaDescription}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                    <button
+                      onClick={() => {
+                        updateSEOSettings(seoForm);
+                        showToast('Pengaturan SEO Global berhasil disimpan!');
+                      }}
+                      className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>Simpan SEO Website</span>
+                    </button>
                   </div>
                 </div>
+              )}
 
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-                  <button
-                    onClick={() => {
-                      updateSEOSettings(seoForm);
-                      showToast('Pengaturan SEO berhasil disimpan!');
-                    }}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shadow-xs"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>Simpan Pengaturan SEO</span>
-                  </button>
+              {/* Sub-Tab 2: SEO Layanan */}
+              {seoSubTab === 'services' && (
+                <div className={`p-6 rounded-2xl border ${adminDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} space-y-4 text-xs sm:text-sm`}>
+                  <h3 className="font-bold text-sm">Konfigurasi SEO Halaman Layanan Manufaktur</h3>
+                  <p className="text-xs text-slate-500">
+                    Setiap layanan secara otomatis dioptimalkan dengan URL slug ramah mesin pencari dan schema markup Structured Data (Service / Product).
+                  </p>
+
+                  <div className="space-y-3 pt-2">
+                    <span className="font-semibold text-xs block">Daftar Slug & Status Terindeks ({services.length} Layanan):</span>
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                      {services.map((srv) => (
+                        <div key={srv.id} className="p-3 flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-950/40">
+                          <div>
+                            <strong className="block text-xs font-bold">{srv.title}</strong>
+                            <span className="text-[11px] text-blue-600 font-mono">/layanan/{srv.slug}</span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-slate-800 dark:text-emerald-400 text-[10px] font-bold">
+                            Schema: Service Ready
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Sub-Tab 3: SEO Project */}
+              {seoSubTab === 'projects' && (
+                <div className={`p-6 rounded-2xl border ${adminDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} space-y-4 text-xs sm:text-sm`}>
+                  <h3 className="font-bold text-sm">Konfigurasi SEO Halaman Portofolio Proyek</h3>
+                  <p className="text-xs text-slate-500">
+                    Setiap studi kasus rekayasa memiliki meta tags dinamis untuk meningkatkan visibilitas pada pencarian B2B dan industri OEM.
+                  </p>
+
+                  <div className="space-y-3 pt-2">
+                    <span className="font-semibold text-xs block">Daftar Proyek & Status URL ({projects.length} Proyek):</span>
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                      {projects.map((prj) => (
+                        <div key={prj.id} className="p-3 flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-950/40">
+                          <div>
+                            <strong className="block text-xs font-bold">{prj.title}</strong>
+                            <span className="text-[11px] text-blue-600 font-mono">/proyek/{prj.slug}</span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-slate-800 dark:text-emerald-400 text-[10px] font-bold">
+                            Klien: {prj.client}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Sub-Tab 4: SEO Artikel */}
+              {seoSubTab === 'articles' && (
+                <div className={`p-6 rounded-2xl border ${adminDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} space-y-4 text-xs sm:text-sm`}>
+                  <h3 className="font-bold text-sm">Konfigurasi SEO Halaman Artikel & Wawasan</h3>
+                  <p className="text-xs text-slate-500">
+                    Mendukung Schema.org `Article` / `BlogPosting`, Twitter Large Card, dan meta tags kepenulisan teknik.
+                  </p>
+
+                  <div className="space-y-3 pt-2">
+                    <span className="font-semibold text-xs block">Daftar Artikel & Meta Kepenulisan ({articles.length} Artikel):</span>
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                      {articles.map((art) => (
+                        <div key={art.id} className="p-3 flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-950/40">
+                          <div>
+                            <strong className="block text-xs font-bold">{art.title}</strong>
+                            <span className="text-[11px] text-blue-600 font-mono">/artikel/{art.slug}</span>
+                          </div>
+                          <span className="text-[11px] text-slate-500 shrink-0">
+                            {art.author} · {art.date}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Sub-Tab 5: Robots.txt & Sitemap.xml */}
+              {seoSubTab === 'files' && (
+                <div className={`p-6 rounded-2xl border ${adminDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} space-y-6 text-xs sm:text-sm`}>
+                  <div>
+                    <h3 className="font-bold text-sm mb-1">Pratinjau File robots.txt & sitemap.xml</h3>
+                    <p className="text-xs text-slate-500">
+                      File konfigurasi crawler bot pencari Google, Bing, dan indexer industri.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs font-mono">/public/robots.txt</span>
+                      <span className="text-[10px] text-emerald-600 font-bold">STATUS: AKTIF</span>
+                    </div>
+                    <pre className="p-3 rounded-xl bg-slate-950 text-slate-200 font-mono text-xs overflow-x-auto">
+{`User-agent: *
+Allow: /
+Disallow: /#admin
+
+Sitemap: https://industrinusantara.co.id/sitemap.xml`}
+                    </pre>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs font-mono">/public/sitemap.xml</span>
+                      <span className="text-[10px] text-emerald-600 font-bold">STATUS: TERINDEX</span>
+                    </div>
+                    <pre className="p-3 rounded-xl bg-slate-950 text-slate-200 font-mono text-xs overflow-x-auto max-h-48">
+{`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://industrinusantara.co.id/</loc><priority>1.0</priority></url>
+  <url><loc>https://industrinusantara.co.id/#/tentang</loc><priority>0.8</priority></url>
+  <url><loc>https://industrinusantara.co.id/#/layanan</loc><priority>0.9</priority></url>
+  <url><loc>https://industrinusantara.co.id/#/proyek</loc><priority>0.9</priority></url>
+  <url><loc>https://industrinusantara.co.id/#/artikel</loc><priority>0.8</priority></url>
+  <url><loc>https://industrinusantara.co.id/#/kontak</loc><priority>0.7</priority></url>
+</urlset>`}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
-          {/* TAB 9: WARNA & BRANDING */}
+          {/* TAB 9: WARNA, LOGO & FAVICON */}
           {activeTab === 'branding' && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-2xl font-bold font-display">Pengaturan Warna & Branding Website</h1>
+                <h1 className="text-2xl font-bold font-display">Pengaturan Warna, Logo & Favicon</h1>
                 <p className="text-xs sm:text-sm text-slate-500">
-                  Sesuaikan warna utama (Primary Blue), aksen sekunder (Industrial Orange), dan logo perusahaan.
+                  Sesuaikan identitas visual perusahaan, warna aksen, badge logo navbar, dan icon favicon browser.
                 </p>
               </div>
 
               <div className={`p-6 rounded-2xl border ${adminDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} space-y-6 text-xs sm:text-sm`}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block font-semibold mb-2">Warna Primer (Primary Blue)</label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={themeForm.primaryColor}
-                        onChange={e => setThemeForm({ ...themeForm, primaryColor: e.target.value })}
-                        className="w-12 h-10 rounded-lg cursor-pointer border-0 bg-transparent p-0"
-                      />
-                      <input
-                        type="text"
-                        value={themeForm.primaryColor}
-                        onChange={e => setThemeForm({ ...themeForm, primaryColor: e.target.value })}
-                        className="px-3 py-2 rounded-lg border font-mono text-xs w-32"
-                      />
+                
+                {/* 1. Warna Website */}
+                <div className="space-y-3">
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wider">
+                    1. Palet Warna Website (Theme Colors)
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block font-semibold mb-2">Warna Primer (Primary Blue)</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={themeForm.primaryColor}
+                          onChange={e => setThemeForm({ ...themeForm, primaryColor: e.target.value })}
+                          className="w-12 h-10 rounded-lg cursor-pointer border-0 bg-transparent p-0"
+                        />
+                        <input
+                          type="text"
+                          value={themeForm.primaryColor}
+                          onChange={e => setThemeForm({ ...themeForm, primaryColor: e.target.value })}
+                          className="px-3 py-2 rounded-lg border font-mono text-xs w-32"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block font-semibold mb-2">Warna Aksen (Secondary Orange)</label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="color"
-                        value={themeForm.accentColor}
-                        onChange={e => setThemeForm({ ...themeForm, accentColor: e.target.value })}
-                        className="w-12 h-10 rounded-lg cursor-pointer border-0 bg-transparent p-0"
-                      />
-                      <input
-                        type="text"
-                        value={themeForm.accentColor}
-                        onChange={e => setThemeForm({ ...themeForm, accentColor: e.target.value })}
-                        className="px-3 py-2 rounded-lg border font-mono text-xs w-32"
-                      />
+                    <div>
+                      <label className="block font-semibold mb-2">Warna Aksen (Secondary Orange)</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={themeForm.accentColor}
+                          onChange={e => setThemeForm({ ...themeForm, accentColor: e.target.value })}
+                          className="w-12 h-10 rounded-lg cursor-pointer border-0 bg-transparent p-0"
+                        />
+                        <input
+                          type="text"
+                          value={themeForm.accentColor}
+                          onChange={e => setThemeForm({ ...themeForm, accentColor: e.target.value })}
+                          className="px-3 py-2 rounded-lg border font-mono text-xs w-32"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
-                  <span className="font-semibold text-xs block">Preview Palet Terpilih:</span>
-                  <div className="flex items-center gap-3">
+                {/* 2. Pengaturan Logo */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wider">
+                    2. Pengaturan Logo & Wordmark Brand
+                  </h3>
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center gap-4">
                     <div
-                      className="px-4 py-2 rounded-lg text-white font-bold text-xs shadow-xs"
+                      className="w-12 h-12 rounded-xl text-white font-black text-base flex items-center justify-center shadow-md transition-colors"
                       style={{ backgroundColor: themeForm.primaryColor }}
                     >
-                      Tombol Utama (Primary)
+                      IN
                     </div>
+                    <div>
+                      <span className="font-bold text-sm block">{companyForm.name}</span>
+                      <span className="text-xs text-slate-500">Wordmark Header Navigasi Resmi</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Pengaturan Favicon */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wider">
+                    3. Pengaturan Favicon Browser
+                  </h3>
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                     <div
-                      className="px-4 py-2 rounded-lg text-white font-bold text-xs shadow-xs"
-                      style={{ backgroundColor: themeForm.accentColor }}
+                      className="w-8 h-8 rounded-lg text-white font-extrabold text-xs flex items-center justify-center shadow-xs"
+                      style={{ backgroundColor: themeForm.primaryColor }}
                     >
-                      Aksen Sekunder
+                      IN
+                    </div>
+                    <div>
+                      <strong className="text-xs block">Icon Tab Browser (32x32 SVG Favicon)</strong>
+                      <span className="text-[11px] text-slate-500">Otomatis sinkron dengan warna primer yang Anda pilih.</span>
                     </div>
                   </div>
                 </div>
@@ -1725,12 +2005,12 @@ export const AdminDashboard: React.FC = () => {
                   <button
                     onClick={() => {
                       updateThemeSettings(themeForm);
-                      showToast('Pengaturan branding tersimpan!');
+                      showToast('Pengaturan warna, logo & favicon tersimpan!');
                     }}
                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <Save className="w-4 h-4" />
-                    <span>Terapkan Warna Branding</span>
+                    <span>Terapkan Branding</span>
                   </button>
                 </div>
               </div>
@@ -2029,10 +2309,16 @@ export const AdminDashboard: React.FC = () => {
                   </p>
                   <button
                     onClick={() => {
-                      if (confirm('Yakin ingin mereset seluruh data kembali ke bawaan awal? Tindakan ini akan menghapus modifikasi lokal.')) {
-                        resetToDefaultData();
-                        showToast('Seluruh data berhasil di-reset ke nilai default!');
-                      }
+                      setConfirmModal({
+                        isOpen: true,
+                        title: 'Reset Seluruh Data Pabrik',
+                        message: 'Yakin ingin mereset seluruh data kembali ke bawaan awal? Tindakan ini akan menghapus modifikasi lokal dan mengembalikan data default.',
+                        confirmText: 'Ya, Reset Data',
+                        onConfirm: () => {
+                          resetToDefaultData();
+                          showToast('Seluruh data berhasil di-reset ke nilai default!');
+                        }
+                      });
                     }}
                     className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                   >
@@ -2067,7 +2353,7 @@ export const AdminDashboard: React.FC = () => {
                         showToast('Data berhasil diimpor!');
                         setImportJsonText('');
                       } else {
-                        alert('Format JSON tidak valid atau rusak.');
+                        showToast('Format JSON tidak valid atau rusak.', true);
                       }
                     }
                   }}
@@ -2083,6 +2369,49 @@ export const AdminDashboard: React.FC = () => {
         </main>
 
       </div>
+
+      {/* Confirmation Dialog Modal */}
+      {confirmModal && confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className={`w-full max-w-md p-6 rounded-2xl border shadow-2xl space-y-4 ${
+            adminDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">{confirmModal.title}</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Konfirmasi tindakan administratif</p>
+              </div>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              {confirmModal.message}
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmModal(null)}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium border cursor-pointer transition-colors ${
+                  adminDarkMode ? 'border-slate-700 hover:bg-slate-800 text-slate-300' : 'border-slate-200 hover:bg-slate-100 text-slate-700'
+                }`}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  confirmModal.onConfirm();
+                  setConfirmModal(null);
+                }}
+                className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white cursor-pointer shadow-xs transition-colors"
+              >
+                {confirmModal.confirmText || 'Ya, Lanjutkan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
